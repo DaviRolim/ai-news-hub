@@ -80,15 +80,17 @@ function parseFeed(xml, source) {
     if (!url) return [];
 
     const rawDesc = item.description ?? item.summary ?? item['content:encoded'] ?? item.content ?? '';
-    const summary = stripHtml(getText(rawDesc)).slice(0, 400).trim();
+    const content = stripHtml(getText(rawDesc)).trim();
+    const summary = content.slice(0, 400).trim();
 
     const rawDate = item.pubDate ?? item.published ?? item.updated ?? '';
     const publishedAt = normalizeDate(getText(rawDate));
 
     return [{
-      title: title.trim(),
+      title: stripHtml(title).trim(),
       source: source.name,
-      summary: summary || title,
+      summary: summary || stripHtml(title),
+      content: content || summary || stripHtml(title),
       url,
       publishedAt,
       category: source.category,
@@ -121,16 +123,28 @@ function resolveLink(link) {
 }
 
 function stripHtml(str) {
-  return str
+  return decodeHtmlEntities(
+    str
     .replace(/<[^>]*>/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim()
+  );
+}
+
+function decodeHtmlEntities(str) {
+  const named = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'",
+    nbsp: ' ',
+  };
+
+  return str
+    .replace(/&([a-z]+);/gi, (_, entity) => named[entity.toLowerCase()] ?? `&${entity};`)
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)));
 }
 
 function normalizeDate(str) {

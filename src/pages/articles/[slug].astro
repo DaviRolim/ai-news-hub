@@ -1,0 +1,96 @@
+---
+import Base from '../../layouts/Base.astro';
+import NewsCard from '../../components/NewsCard.astro';
+import rawArticles from '../../data/articles.json';
+import { createArticles, createParagraphs, getRelatedArticles } from '../../lib/articles';
+
+export function getStaticPaths() {
+  const articles = createArticles(rawArticles);
+
+  return articles.map((article) => ({
+    params: { slug: article.slug },
+    props: {
+      article,
+      relatedArticles: getRelatedArticles(articles, article),
+    },
+  }));
+}
+
+const { article, relatedArticles } = Astro.props;
+const paragraphs = createParagraphs(article.content);
+---
+
+<Base title={`${article.title} | AI News Hub`} description={article.summary}>
+  <div class="space-y-10">
+    <a href="/" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-blue-300 transition-colors">
+      <span aria-hidden="true">←</span>
+      Back to briefing
+    </a>
+
+    <article class="rounded-3xl border border-gray-800 bg-gray-900/80 overflow-hidden">
+      <div class="border-b border-gray-800 px-6 py-8 md:px-10">
+        <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.18em] text-gray-500">
+          <span class="rounded-full border border-blue-500/40 bg-blue-500/10 px-3 py-1 text-blue-300">{article.category}</span>
+          <span>{article.source}</span>
+          <span>{article.formattedDate}</span>
+          <span>{article.readingMinutes} min read</span>
+        </div>
+
+        <h1 class="mt-5 max-w-3xl text-3xl font-bold leading-tight text-white md:text-5xl">
+          {article.title}
+        </h1>
+
+        <p class="mt-5 max-w-3xl text-base leading-8 text-gray-300 md:text-lg">
+          {article.summary}
+        </p>
+      </div>
+
+      <div class="grid gap-10 px-6 py-8 md:grid-cols-[minmax(0,1fr)_240px] md:px-10">
+        <div class="space-y-5 text-base leading-8 text-gray-200">
+          {paragraphs.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+        </div>
+
+        <aside class="space-y-4 rounded-2xl border border-gray-800 bg-gray-950/70 p-5 h-fit">
+          <p class="text-xs uppercase tracking-[0.18em] text-gray-500">Source attribution</p>
+          <div class="space-y-2">
+            <p class="text-sm font-semibold text-white">{article.source}</p>
+            <p class="text-sm text-gray-400">
+              This briefing is generated from the source feed and linked back to the original publication.
+            </p>
+          </div>
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 rounded-full border border-blue-500/50 px-4 py-2 text-sm font-medium text-blue-300 hover:border-blue-400 hover:text-blue-200 transition-colors"
+          >
+            Visit original article
+            <span aria-hidden="true">↗</span>
+          </a>
+        </aside>
+      </div>
+    </article>
+
+    {relatedArticles.length > 0 && (
+      <section>
+        <div class="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p class="text-xs uppercase tracking-[0.18em] text-gray-500">Keep reading</p>
+            <h2 class="mt-2 text-2xl font-semibold text-white">Related stories</h2>
+          </div>
+          <a href="/" class="text-sm text-gray-400 hover:text-blue-300 transition-colors">
+            View all stories
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {relatedArticles.map((relatedArticle) => (
+            <NewsCard {...relatedArticle} />
+          ))}
+        </div>
+      </section>
+    )}
+  </div>
+</Base>

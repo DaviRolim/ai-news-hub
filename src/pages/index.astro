@@ -1,8 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
 import NewsCard from '../components/NewsCard.astro';
-import articles from '../data/articles.json';
+import rawArticles from '../data/articles.json';
+import { createArticles } from '../lib/articles';
 
+const articles = createArticles(rawArticles);
 const [featured, ...rest] = articles;
 const categories = ['All', ...Array.from(new Set(articles.map((a) => a.category)))];
 ---
