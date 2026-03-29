@@ -2,6 +2,31 @@
 
 An information hub curating the most important news in artificial intelligence.
 
+**Live site:** _Deploy to Cloudflare Pages to get the URL (see Deployment below)_
+
+## Deployment (Cloudflare Pages)
+
+### One-time setup
+
+1. Go to [Cloudflare Pages](https://pages.cloudflare.com/) and create a new project.
+2. Connect the GitHub repo: `DaviRolim/ai-news-hub`
+3. Use these build settings:
+   - **Framework preset:** Astro
+   - **Build command:** `npm run build`
+   - **Output directory:** `dist`
+   - **Node.js version:** `22`
+4. Deploy — Cloudflare will build and host the site automatically.
+5. Update this README with the live URL once deployed.
+
+### Automated content refresh
+
+A GitHub Actions workflow (`.github/workflows/refresh-content.yml`) runs every 6 hours:
+1. Fetches the latest AI news from RSS feeds
+2. Commits updated `src/data/articles.json` if changed
+3. The push triggers a Cloudflare Pages rebuild
+
+The workflow can also be triggered manually from the GitHub Actions UI.
+
 ## Local Setup
 
 **Project location (managed by Paperclip):**
@@ -55,8 +80,8 @@ public/         — static assets
 
 ## Roadmap
 
-1. RSS feed aggregation pipeline
+1. ~~RSS feed aggregation pipeline~~
 2. Content collections with schema validation
 3. Category filtering
 4. Search
-5. Deploy to Cloudflare Pages
+5. ~~Deploy to Cloudflare Pages~~
