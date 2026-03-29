@@ -1,0 +1,42 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'AI News Hub',
+  description = 'The most important news in artificial intelligence, curated daily.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body class="bg-gray-950 text-gray-100 min-h-screen font-sans antialiased">
+    <header class="border-b border-gray-800 py-4 px-6">
+      <div class="max-w-4xl mx-auto flex items-center justify-between">
+        <a href="/" class="text-xl font-bold tracking-tight text-white hover:text-blue-400 transition-colors">
+          AI News Hub
+        </a>
+        <span class="text-xs text-gray-500 uppercase tracking-widest">Daily Briefing</span>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 py-10">
+      <slot />
+    </main>
+
+    <footer class="border-t border-gray-800 py-6 mt-16 text-center text-xs text-gray-600">
+      AI News Hub — curated by machine, for humans.
+    </footer>
+  </body>
+</html>
