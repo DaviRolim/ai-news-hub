@@ -1,37 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import NewsCard from '../components/NewsCard.astro';
-
-// Placeholder articles — will be replaced by aggregated content
-const articles = [
-  {
-    title: 'GPT-5 Sets New Benchmarks Across Reasoning and Code Generation',
-    source: 'OpenAI Blog',
-    summary:
-      'OpenAI releases GPT-5, achieving state-of-the-art results on MMLU, HumanEval, and MATH benchmarks. The model shows significant improvements in multi-step reasoning and code synthesis tasks.',
-    url: '#',
-    publishedAt: '2026-03-29',
-    category: 'Models',
-  },
-  {
-    title: 'Anthropic Publishes Research on Constitutional AI Scalability',
-    source: 'Anthropic',
-    summary:
-      'New research from Anthropic demonstrates that Constitutional AI principles can be applied at scale without significant capability trade-offs, providing a promising path for safe model deployment.',
-    url: '#',
-    publishedAt: '2026-03-28',
-    category: 'Safety',
-  },
-  {
-    title: 'Google DeepMind AlphaFold 3 Predicts Protein-Drug Interactions',
-    source: 'Nature',
-    summary:
-      'AlphaFold 3 extends beyond protein structure to predict how small molecules and drugs bind to proteins, opening new possibilities in pharmaceutical research and drug discovery.',
-    url: '#',
-    publishedAt: '2026-03-27',
-    category: 'Research',
-  },
-];
+import articles from '../data/articles.json';
 ---
 
 <Base>
