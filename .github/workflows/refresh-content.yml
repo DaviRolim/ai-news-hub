@@ -27,15 +27,18 @@ jobs:
       - name: Fetch latest AI news
         run: npm run fetch-news
 
+      - name: Fetch latest YouTube videos
+        run: npm run fetch-youtube
+
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/data/articles.json
+          git add src/data/articles.json src/data/videos.json
           if git diff --staged --quiet; then
-            echo "No changes to articles.json, skipping commit."
+            echo "No changes to content data, skipping commit."
           else
-            git commit -m "chore: refresh AI news articles"
+            git commit -m "chore: refresh AI news articles and videos"
             git push
-            echo "Pushed updated articles.json — Cloudflare Pages rebuild triggered."
+            echo "Pushed updated content data — Cloudflare Pages rebuild triggered."
           fi

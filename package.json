@@ -7,10 +7,11 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "node scripts/fetch-news.js && astro build",
+    "build": "node scripts/fetch-news.js && node scripts/fetch-youtube.js && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "fetch-news": "node scripts/fetch-news.js"
+    "fetch-news": "node scripts/fetch-news.js",
+    "fetch-youtube": "node scripts/fetch-youtube.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",

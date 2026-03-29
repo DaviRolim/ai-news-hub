@@ -1,0 +1,177 @@
+---
+import type { Article } from '../lib/articles';
+import NewsCard from './NewsCard.astro';
+
+interface Props {
+  articles: Article[];
+  currentDate: string;
+}
+
+const { articles, currentDate } = Astro.props;
+const [featured, ...rest] = articles;
+const categories = ['All', ...Array.from(new Set(articles.map((article) => article.category)))];
+const componentId = `searchable-feed-${crypto.randomUUID()}`;
+---
+
+<section id={componentId}>
+  <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div>
+      <h1 class="mb-2 text-3xl font-bold text-white">Today's AI Briefing</h1>
+      <p class="text-sm text-gray-400">
+        {currentDate} · {articles.length} {articles.length === 1 ? 'story' : 'stories'}
+      </p>
+    </div>
+
+    <div class="w-full md:max-w-sm">
+      <label for={`${componentId}-search`} class="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
+        Search articles
+      </label>
+      <input
+        id={`${componentId}-search`}
+        data-search-input
+        type="search"
+        placeholder="Search titles and summaries"
+        class="w-full rounded-full border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-gray-100 outline-none transition focus:border-blue-500"
+        disabled={articles.length === 0}
+      />
+    </div>
+  </div>
+
+  {articles.length > 0 ? (
+    <>
+      <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-wrap gap-2">
+          {categories.map((category, index) => (
+            <button
+              type="button"
+              data-filter={category}
+              aria-pressed={index === 0 ? 'true' : 'false'}
+              class={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                index === 0
+                  ? 'bg-blue-600 border-blue-600 text-white'
+                  : 'border-gray-700 bg-transparent text-gray-400 hover:border-blue-500 hover:text-blue-400'
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
+        <p class="text-xs text-gray-500" data-results-label>
+          Showing all {articles.length} {articles.length === 1 ? 'story' : 'stories'}
+        </p>
+      </div>
+
+      <p hidden data-empty-state class="rounded-xl border border-dashed border-gray-700 bg-gray-900 px-4 py-6 text-center text-sm text-gray-400">
+        No articles found.
+      </p>
+
+      {featured && (
+        <div
+          class="mb-8"
+          data-article
+          data-category={featured.category}
+          data-search-text={`${featured.title} ${featured.summary}`.toLowerCase()}
+        >
+          <NewsCard {...featured} featured={true} />
+        </div>
+      )}
+
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2" data-article-grid>
+        {rest.map((article) => (
+          <div
+            data-article
+            data-category={article.category}
+            data-search-text={`${article.title} ${article.summary}`.toLowerCase()}
+          >
+            <NewsCard {...article} />
+          </div>
+        ))}
+      </div>
+    </>
+  ) : (
+    <p class="rounded-xl border border-dashed border-gray-700 bg-gray-900 px-4 py-6 text-center text-sm text-gray-400">
+      No articles are available yet.
+    </p>
+  )}
+</section>
+
+<script define:vars={{ componentId }}>
+  const root = document.getElementById(componentId);
+
+  if (root) {
+    const searchInput = root.querySelector('[data-search-input]');
+    const emptyState = root.querySelector('[data-empty-state]');
+    const resultsLabel = root.querySelector('[data-results-label]');
+    const filterButtons = Array.from(root.querySelectorAll('[data-filter]'));
+    const articleItems = Array.from(root.querySelectorAll('[data-article]'));
+    let selectedCategory = 'All';
+
+    const updateActiveFilter = () => {
+      filterButtons.forEach((button) => {
+        const isActive = button.dataset.filter === selectedCategory;
+        button.setAttribute('aria-pressed', String(isActive));
+        button.classList.toggle('bg-blue-600', isActive);
+        button.classList.toggle('border-blue-600', isActive);
+        button.classList.toggle('text-white', isActive);
+        button.classList.toggle('border-gray-700', !isActive);
+        button.classList.toggle('bg-transparent', !isActive);
+        button.classList.toggle('text-gray-400', !isActive);
+        button.classList.toggle('hover:border-blue-500', !isActive);
+        button.classList.toggle('hover:text-blue-400', !isActive);
+      });
+    };
+
+    const updateResultsLabel = (matches, query) => {
+      if (!resultsLabel) {
+        return;
+      }
+
+      if (!query && selectedCategory === 'All') {
+        resultsLabel.textContent = `Showing all ${articleItems.length} ${articleItems.length === 1 ? 'story' : 'stories'}`;
+        return;
+      }
+
+      resultsLabel.textContent = `Showing ${matches} of ${articleItems.length} ${articleItems.length === 1 ? 'story' : 'stories'}`;
+    };
+
+    const applyFilters = () => {
+      const query = searchInput instanceof HTMLInputElement ? searchInput.value.trim().toLowerCase() : '';
+      let matches = 0;
+
+      articleItems.forEach((article) => {
+        const category = article.dataset.category || '';
+        const searchText = article.dataset.searchText || '';
+        const matchesCategory = selectedCategory === 'All' || category === selectedCategory;
+        const matchesQuery = query === '' || searchText.includes(query);
+        const visible = matchesCategory && matchesQuery;
+
+        article.hidden = !visible;
+        if (visible) {
+          matches += 1;
+        }
+      });
+
+      if (emptyState) {
+        emptyState.hidden = matches !== 0;
+      }
+
+      updateResultsLabel(matches, query);
+    };
+
+    filterButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        selectedCategory = button.dataset.filter || 'All';
+        updateActiveFilter();
+        applyFilters();
+      });
+    });
+
+    if (searchInput instanceof HTMLInputElement) {
+      searchInput.addEventListener('input', applyFilters);
+    }
+
+    updateActiveFilter();
+    applyFilters();
+  }
+</script>

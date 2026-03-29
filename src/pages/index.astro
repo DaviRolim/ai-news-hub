@@ -1,78 +1,22 @@
 ---
 import Base from '../layouts/Base.astro';
-import NewsCard from '../components/NewsCard.astro';
+import SearchableArticleFeed from '../components/SearchableArticleFeed.astro';
 import rawArticles from '../data/articles.json';
+import rawVideos from '../data/videos.json';
 import { createArticles } from '../lib/articles';
+import { createVideos, mergeContent } from '../lib/videos';
 
 const articles = createArticles(rawArticles);
-const [featured, ...rest] = articles;
-const categories = ['All', ...Array.from(new Set(articles.map((a) => a.category)))];
+const videos = createVideos(rawVideos);
+const allContent = mergeContent(articles, videos);
+const currentDate = new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+});
 ---
 
 <Base>
-  <div class="mb-8">
-    <h1 class="text-3xl font-bold text-white mb-2">Today's AI Briefing</h1>
-    <p class="text-gray-400 text-sm">
-      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-      · {articles.length} stories
-    </p>
-  </div>
-
-  <!-- Featured story -->
-  <div class="mb-8" data-article data-category={featured.category}>
-    <NewsCard {...featured} featured={true} />
-  </div>
-
-  <!-- Category filter -->
-  <div class="flex flex-wrap gap-2 mb-6" id="category-filters">
-    {categories.map((cat) => (
-      <button
-        data-filter={cat}
-        class={`px-3 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
-          cat === 'All'
-            ? 'bg-blue-600 border-blue-600 text-white'
-            : 'bg-transparent border-gray-700 text-gray-400 hover:border-blue-500 hover:text-blue-400'
-        }`}
-      >
-        {cat}
-      </button>
-    ))}
-  </div>
-
-  <!-- Article grid -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="article-grid">
-    {rest.map((article) => (
-      <div data-article data-category={article.category}>
-        <NewsCard {...article} />
-      </div>
-    ))}
-  </div>
+  <SearchableArticleFeed articles={allContent} currentDate={currentDate} />
 </Base>
-
-<script>
-  const filters = document.querySelectorAll<HTMLButtonElement>('[data-filter]');
-  const articles = document.querySelectorAll<HTMLElement>('[data-article]');
-
-  filters.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const selected = btn.dataset.filter!;
-
-      // Update active button style
-      filters.forEach((b) => {
-        if (b.dataset.filter === selected) {
-          b.classList.add('bg-blue-600', 'border-blue-600', 'text-white');
-          b.classList.remove('bg-transparent', 'border-gray-700', 'text-gray-400', 'hover:border-blue-500', 'hover:text-blue-400');
-        } else {
-          b.classList.remove('bg-blue-600', 'border-blue-600', 'text-white');
-          b.classList.add('bg-transparent', 'border-gray-700', 'text-gray-400', 'hover:border-blue-500', 'hover:text-blue-400');
-        }
-      });
-
-      // Show/hide articles
-      articles.forEach((article) => {
-        const cat = article.dataset.category;
-        article.style.display = (selected === 'All' || cat === selected) ? '' : 'none';
-      });
-    });
-  });
-</script>

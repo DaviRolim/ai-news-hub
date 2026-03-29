@@ -6,6 +6,10 @@ export interface ArticleRecord {
   url: string;
   publishedAt: string;
   category?: string;
+  videoId?: string;
+  thumbnailUrl?: string;
+  channelName?: string;
+  type?: 'article' | 'video';
 }
 
 export interface Article extends ArticleRecord {

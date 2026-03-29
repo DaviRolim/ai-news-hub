@@ -1,0 +1,255 @@
+---
+import Base from '../../layouts/Base.astro';
+import rawVideos from '../../data/videos.json';
+
+interface RawVideoRecord {
+  title: string;
+  summary?: string;
+  description?: string;
+  url?: string;
+  publishedAt: string;
+  category?: string;
+  videoId?: string;
+  thumbnailUrl?: string;
+  channelName?: string;
+  channelUrl?: string;
+  keyPoints?: string[];
+  type?: 'article' | 'video';
+}
+
+interface Video extends RawVideoRecord {
+  category: string;
+  description: string;
+  summary: string;
+  slug: string;
+  formattedDate: string;
+  channelName: string;
+  channelUrl: string;
+  videoUrl: string;
+  embedUrl: string;
+  keyPoints: string[];
+  type: 'video';
+}
+
+export function getStaticPaths() {
+  const dateFormatter = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  const normalizeCopy = (copy: string) => copy.replace(/\s+/g, ' ').trim();
+  const formatDate = (publishedAt: string) => {
+    const date = new Date(publishedAt);
+    return Number.isNaN(date.getTime()) ? publishedAt : dateFormatter.format(date);
+  };
+  const slugify = (value: string) => {
+    const slug = value
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    return slug || 'video';
+  };
+  const slugCounts = new Map<string, number>();
+
+  const videos = (rawVideos as RawVideoRecord[])
+    .filter((video) => (video.type ?? 'video') === 'video' && video.videoId)
+    .map((video) => {
+      const description = normalizeCopy(video.description || video.summary || video.title);
+      const summary = normalizeCopy(video.summary || description || video.title);
+      const baseSlug = slugify(video.title);
+      const slugCount = slugCounts.get(baseSlug) ?? 0;
+      slugCounts.set(baseSlug, slugCount + 1);
+
+      const videoUrl = video.url || `https://www.youtube.com/watch?v=${video.videoId}`;
+      const channelUrl = video.channelUrl || videoUrl;
+
+      return {
+        ...video,
+        category: video.category || 'Video',
+        description,
+        summary,
+        slug: slugCount === 0 ? baseSlug : `${baseSlug}-${slugCount + 1}`,
+        formattedDate: formatDate(video.publishedAt),
+        channelName: normalizeCopy(video.channelName || 'YouTube'),
+        channelUrl,
+        videoUrl,
+        embedUrl: `https://www.youtube.com/embed/${video.videoId}`,
+        keyPoints: Array.isArray(video.keyPoints) ? video.keyPoints.filter(Boolean).map(normalizeCopy) : [],
+        type: 'video' as const,
+      };
+    });
+
+  return videos.map((video) => ({
+    params: { slug: video.slug },
+    props: {
+      video,
+      relatedVideos: [
+        ...videos.filter(
+          (candidate) => candidate.slug !== video.slug && candidate.channelName === video.channelName,
+        ),
+        ...videos.filter(
+          (candidate) => candidate.slug !== video.slug && candidate.channelName !== video.channelName,
+        ),
+      ].slice(0, 3),
+    },
+  }));
+}
+
+const { video, relatedVideos } = Astro.props;
+---
+
+<Base title={`${video.title} | AI News Hub`} description={video.summary}>
+  <div class="space-y-10">
+    <a href="/" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-blue-300 transition-colors">
+      <span aria-hidden="true">←</span>
+      Back to briefing
+    </a>
+
+    <article class="overflow-hidden rounded-3xl border border-gray-800 bg-gray-900/80">
+      <div class="border-b border-gray-800 px-6 py-8 md:px-10">
+        <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.18em] text-gray-500">
+          <span class="rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-red-300">Video</span>
+          <span>{video.channelName}</span>
+          <span>{video.formattedDate}</span>
+        </div>
+
+        <h1 class="mt-5 max-w-3xl text-3xl font-bold leading-tight text-white md:text-5xl">
+          {video.title}
+        </h1>
+
+        <p class="mt-5 max-w-3xl text-base leading-8 text-gray-300 md:text-lg">
+          {video.summary}
+        </p>
+      </div>
+
+      <div class="grid gap-10 px-6 py-8 md:grid-cols-[minmax(0,1fr)_260px] md:px-10">
+        <div class="space-y-8">
+          <div class="overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-[0_24px_80px_rgba(15,23,42,0.45)]">
+            <div class="aspect-video bg-gray-950">
+              <iframe
+                class="h-full w-full"
+                src={video.embedUrl}
+                title={video.title}
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              />
+            </div>
+          </div>
+
+          <section class="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-6">
+            <p class="text-xs uppercase tracking-[0.18em] text-blue-300">AI summary</p>
+            <p class="mt-4 text-base leading-8 text-gray-200">
+              {video.summary}
+            </p>
+
+            {video.keyPoints.length > 0 ? (
+              <div class="mt-6">
+                <h2 class="text-sm font-semibold uppercase tracking-[0.18em] text-gray-100">Key points</h2>
+                <ul class="mt-4 space-y-3">
+                  {video.keyPoints.map((point) => (
+                    <li class="flex gap-3 text-sm leading-7 text-gray-300">
+                      <span class="mt-2 h-2 w-2 flex-none rounded-full bg-blue-300" aria-hidden="true" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p class="mt-6 text-sm leading-7 text-gray-400">
+                Transcript-based key points are not available for this video yet. The description below is being used as the fallback summary.
+              </p>
+            )}
+          </section>
+
+          <section class="space-y-5 text-base leading-8 text-gray-200">
+            <div>
+              <p class="text-xs uppercase tracking-[0.18em] text-gray-500">Description</p>
+              <p class="mt-4">{video.description}</p>
+            </div>
+          </section>
+        </div>
+
+        <aside class="h-fit space-y-4 rounded-2xl border border-gray-800 bg-gray-950/70 p-5">
+          <p class="text-xs uppercase tracking-[0.18em] text-gray-500">Video details</p>
+          <div class="space-y-4">
+            <div>
+              <p class="text-xs uppercase tracking-[0.18em] text-gray-500">Channel</p>
+              <a
+                href={video.channelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-blue-300 transition-colors"
+              >
+                {video.channelName}
+                <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+
+            <div>
+              <p class="text-xs uppercase tracking-[0.18em] text-gray-500">Published</p>
+              <p class="mt-2 text-sm text-gray-200">{video.formattedDate}</p>
+            </div>
+
+            <div>
+              <p class="text-xs uppercase tracking-[0.18em] text-gray-500">Category</p>
+              <p class="mt-2 text-sm text-gray-200">{video.category}</p>
+            </div>
+          </div>
+
+          <a
+            href={video.videoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 rounded-full border border-red-500/50 px-4 py-2 text-sm font-medium text-red-200 hover:border-red-400 hover:text-red-100 transition-colors"
+          >
+            Watch on YouTube
+            <span aria-hidden="true">↗</span>
+          </a>
+        </aside>
+      </div>
+    </article>
+
+    {relatedVideos.length > 0 && (
+      <section>
+        <div class="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p class="text-xs uppercase tracking-[0.18em] text-gray-500">Keep watching</p>
+            <h2 class="mt-2 text-2xl font-semibold text-white">Related videos</h2>
+          </div>
+          <a href="/" class="text-sm text-gray-400 hover:text-blue-300 transition-colors">
+            View all stories
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {relatedVideos.map((relatedVideo) => (
+            <article class="group h-full rounded-2xl border border-gray-800 bg-gray-900 p-5 transition-colors hover:border-red-500">
+              <div class="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-gray-500">
+                <span class="rounded-full border border-red-500/40 bg-red-500/10 px-2 py-1 text-red-300">Video</span>
+                <span>{relatedVideo.channelName}</span>
+              </div>
+
+              <h3 class="text-lg font-semibold leading-snug text-white transition-colors group-hover:text-red-200">
+                <a href={`/videos/${relatedVideo.slug}/`}>{relatedVideo.title}</a>
+              </h3>
+
+              <p class="mt-3 text-sm leading-7 text-gray-400 line-clamp-4">{relatedVideo.summary}</p>
+
+              <div class="mt-5 flex items-center justify-between gap-3 text-xs">
+                <a href={`/videos/${relatedVideo.slug}/`} class="text-red-300 transition-colors hover:text-red-200">
+                  Watch summary
+                </a>
+                <time datetime={relatedVideo.publishedAt} class="text-gray-500">{relatedVideo.formattedDate}</time>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+  </div>
+</Base>
