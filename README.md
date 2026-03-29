@@ -2,6 +2,16 @@
 
 An information hub curating the most important news in artificial intelligence.
 
+## Local Setup
+
+**Project location (managed by Paperclip):**
+
+```
+~/.paperclip/instances/default/projects/5ae389e2-6082-4a80-90df-e96d41dc62df/6cf71234-6412-4e42-965e-30949bf8dc0f/_default
+```
+
+> No remote repository yet. The project is local-only. To push to GitHub: create a repo, then `git remote add origin <url> && git push -u origin main`.
+
 ## Tech Stack
 
 **[Astro 6](https://astro.build)** + **[Tailwind CSS v4](https://tailwindcss.com)**
