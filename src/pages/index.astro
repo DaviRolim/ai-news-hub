@@ -2,6 +2,9 @@
 import Base from '../layouts/Base.astro';
 import NewsCard from '../components/NewsCard.astro';
 import articles from '../data/articles.json';
+
+const [featured, ...rest] = articles;
+const categories = ['All', ...Array.from(new Set(articles.map((a) => a.category)))];
 ---
 
 <Base>
@@ -13,9 +16,61 @@ import articles from '../data/articles.json';
     </p>
   </div>
 
-  <div class="grid gap-4">
-    {articles.map((article) => (
-      <NewsCard {...article} />
+  <!-- Featured story -->
+  <div class="mb-8" data-article data-category={featured.category}>
+    <NewsCard {...featured} featured={true} />
+  </div>
+
+  <!-- Category filter -->
+  <div class="flex flex-wrap gap-2 mb-6" id="category-filters">
+    {categories.map((cat) => (
+      <button
+        data-filter={cat}
+        class={`px-3 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+          cat === 'All'
+            ? 'bg-blue-600 border-blue-600 text-white'
+            : 'bg-transparent border-gray-700 text-gray-400 hover:border-blue-500 hover:text-blue-400'
+        }`}
+      >
+        {cat}
+      </button>
+    ))}
+  </div>
+
+  <!-- Article grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="article-grid">
+    {rest.map((article) => (
+      <div data-article data-category={article.category}>
+        <NewsCard {...article} />
+      </div>
     ))}
   </div>
 </Base>
+
+<script>
+  const filters = document.querySelectorAll<HTMLButtonElement>('[data-filter]');
+  const articles = document.querySelectorAll<HTMLElement>('[data-article]');
+
+  filters.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const selected = btn.dataset.filter!;
+
+      // Update active button style
+      filters.forEach((b) => {
+        if (b.dataset.filter === selected) {
+          b.classList.add('bg-blue-600', 'border-blue-600', 'text-white');
+          b.classList.remove('bg-transparent', 'border-gray-700', 'text-gray-400', 'hover:border-blue-500', 'hover:text-blue-400');
+        } else {
+          b.classList.remove('bg-blue-600', 'border-blue-600', 'text-white');
+          b.classList.add('bg-transparent', 'border-gray-700', 'text-gray-400', 'hover:border-blue-500', 'hover:text-blue-400');
+        }
+      });
+
+      // Show/hide articles
+      articles.forEach((article) => {
+        const cat = article.dataset.category;
+        article.style.display = (selected === 'All' || cat === selected) ? '' : 'none';
+      });
+    });
+  });
+</script>
