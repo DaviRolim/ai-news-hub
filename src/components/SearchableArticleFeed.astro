@@ -24,7 +24,7 @@ const componentId = `searchable-feed-${crypto.randomUUID()}`;
 
     <div class="w-full md:max-w-sm">
       <label for={`${componentId}-search`} class="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
-        Search articles
+        Search stories
       </label>
       <input
         id={`${componentId}-search`}
@@ -63,7 +63,7 @@ const componentId = `searchable-feed-${crypto.randomUUID()}`;
       </div>
 
       <p hidden data-empty-state class="rounded-xl border border-dashed border-gray-700 bg-gray-900 px-4 py-6 text-center text-sm text-gray-400">
-        No articles found.
+        No stories found.
       </p>
 
       {featured && (
@@ -91,7 +91,7 @@ const componentId = `searchable-feed-${crypto.randomUUID()}`;
     </>
   ) : (
     <p class="rounded-xl border border-dashed border-gray-700 bg-gray-900 px-4 py-6 text-center text-sm text-gray-400">
-      No articles are available yet.
+      No stories are available yet.
     </p>
   )}
 </section>

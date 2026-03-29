@@ -30,7 +30,7 @@ const {
 } = Astro.props;
 
 const isVideo = type === 'video';
-const primaryPath = isVideo ? url : `/articles/${slug}/`;
+const primaryPath = isVideo ? `/videos/${slug}/` : `/articles/${slug}/`;
 const date = formattedDate ?? new Date(publishedAt).toLocaleDateString('en-US', {
   month: 'short',
   day: 'numeric',
@@ -41,7 +41,7 @@ const date = formattedDate ?? new Date(publishedAt).toLocaleDateString('en-US', 
 {featured ? (
   <article class="border border-gray-700 rounded-xl p-7 bg-gray-900 hover:border-blue-500 transition-colors">
     {isVideo && thumbnailUrl && (
-      <a href={primaryPath} target={isVideo ? '_blank' : undefined} rel={isVideo ? 'noopener noreferrer' : undefined} class="block relative mb-4 rounded-lg overflow-hidden">
+      <a href={primaryPath} class="block relative mb-4 rounded-lg overflow-hidden">
         <img src={thumbnailUrl} alt={title} class="w-full object-cover aspect-video" loading="lazy" />
         <div class="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/20 transition-colors">
           <div class="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center shadow-lg">
@@ -59,24 +59,22 @@ const date = formattedDate ?? new Date(publishedAt).toLocaleDateString('en-US', 
       <time datetime={publishedAt}>{date}</time>
     </div>
     <h2 class="text-2xl font-bold text-white hover:text-blue-300 transition-colors mb-3 leading-snug">
-      <a href={primaryPath} target={isVideo ? '_blank' : undefined} rel={isVideo ? 'noopener noreferrer' : undefined}>{title}</a>
+      <a href={primaryPath}>{title}</a>
     </h2>
     <p class="text-sm text-gray-300 leading-relaxed line-clamp-4">{summary}</p>
     <div class="mt-4 flex flex-wrap items-center gap-4 text-xs">
-      <a href={primaryPath} target={isVideo ? '_blank' : undefined} rel={isVideo ? 'noopener noreferrer' : undefined} class="text-blue-400 hover:text-blue-300 transition-colors">
-        {isVideo ? 'Watch on YouTube →' : 'Continue briefing →'}
+      <a href={primaryPath} class="text-blue-400 hover:text-blue-300 transition-colors">
+        {isVideo ? 'Watch briefing →' : 'Continue briefing →'}
       </a>
-      {!isVideo && (
-        <a href={url} target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-gray-200 transition-colors">
-          Original source
-        </a>
-      )}
+      <a href={url} target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-gray-200 transition-colors">
+        {isVideo ? 'YouTube' : 'Original source'}
+      </a>
     </div>
   </article>
 ) : (
   <article class="group border border-gray-800 rounded-lg p-5 hover:border-blue-600 transition-colors bg-gray-900 h-full">
     {isVideo && thumbnailUrl && (
-      <a href={primaryPath} target="_blank" rel="noopener noreferrer" class="block relative mb-3 rounded overflow-hidden">
+      <a href={primaryPath} class="block relative mb-3 rounded overflow-hidden">
         <img src={thumbnailUrl} alt={title} class="w-full object-cover aspect-video" loading="lazy" />
         <div class="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/20 transition-colors">
           <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center shadow">
@@ -94,18 +92,16 @@ const date = formattedDate ?? new Date(publishedAt).toLocaleDateString('en-US', 
       <time datetime={publishedAt}>{date}</time>
     </div>
     <h2 class="text-base font-semibold text-gray-100 group-hover:text-blue-300 transition-colors mb-2 leading-snug">
-      <a href={primaryPath} target={isVideo ? '_blank' : undefined} rel={isVideo ? 'noopener noreferrer' : undefined}>{title}</a>
+      <a href={primaryPath}>{title}</a>
     </h2>
     <p class="text-sm text-gray-400 leading-relaxed line-clamp-3">{summary}</p>
     <div class="mt-4 flex items-center justify-between gap-3 text-xs">
-      <a href={primaryPath} target={isVideo ? '_blank' : undefined} rel={isVideo ? 'noopener noreferrer' : undefined} class="text-blue-400 hover:text-blue-300 transition-colors">
-        {isVideo ? 'Watch on YouTube' : 'Read briefing'}
+      <a href={primaryPath} class="text-blue-400 hover:text-blue-300 transition-colors">
+        {isVideo ? 'Watch briefing' : 'Read briefing'}
       </a>
-      {!isVideo && (
-        <a href={url} target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-300 transition-colors">
-          Source
-        </a>
-      )}
+      <a href={url} target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-300 transition-colors">
+        {isVideo ? 'YouTube' : 'Source'}
+      </a>
     </div>
   </article>
 )}

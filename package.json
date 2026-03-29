@@ -14,9 +14,11 @@
     "fetch-youtube": "node scripts/fetch-youtube.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@tailwindcss/vite": "^4.2.2",
     "astro": "^6.1.1",
-    "tailwindcss": "^4.2.2"
+    "tailwindcss": "^4.2.2",
+    "youtube-transcript": "^1.3.0"
   },
   "devDependencies": {
     "fast-xml-parser": "^5.5.9"

@@ -4,12 +4,20 @@
  * Run: node scripts/fetch-youtube.js
  */
 
+import Anthropic from '@anthropic-ai/sdk';
 import { XMLParser } from 'fast-xml-parser';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { fetchTranscript } from '../node_modules/youtube-transcript/dist/youtube-transcript.esm.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929';
+const MAX_VIDEOS_PER_FETCH = 30;
+const MAX_KEY_POINTS = 5;
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
 
 const YOUTUBE_CHANNELS = [
   { name: 'Nate B Jones', channelId: 'UC0C-17n9iuUQPylguM1d-lQ', handle: '@NateBJones' },
@@ -79,10 +87,11 @@ function parseAtomFeed(xml, channel) {
       videoId,
       title: title.trim(),
       channelName: channel.name,
-      summary: description.slice(0, 400).trim() || title.trim(),
+      summary: createFallbackSummary(description, title),
       description: description.trim(),
       thumbnailUrl,
       publishedAt,
+      channelUrl: `https://www.youtube.com/${channel.handle}`,
       url: `https://www.youtube.com/watch?v=${videoId}`,
       type: 'video',
     }];
@@ -117,6 +126,91 @@ function deduplicateByVideoId(videos) {
   });
 }
 
+function normalizeCopy(copy) {
+  return copy.replace(/\s+/g, ' ').trim();
+}
+
+function createFallbackSummary(description, title) {
+  const normalized = normalizeCopy(description || title);
+  return normalized.slice(0, 400).trim() || title.trim();
+}
+
+async function fetchTranscriptText(videoId) {
+  try {
+    const transcript = await fetchTranscript(videoId);
+    return normalizeCopy(transcript.map((segment) => segment.text).join(' '));
+  } catch (error) {
+    console.warn(`  transcript ${videoId}: ${error.message}`);
+    return '';
+  }
+}
+
+async function generateSummaryFromTranscript(video, transcriptText) {
+  const fallbackSummary = createFallbackSummary(video.description, video.title);
+
+  if (!transcriptText || !anthropic) {
+    return {
+      summary: fallbackSummary,
+      keyPoints: [],
+    };
+  }
+
+  try {
+    const response = await anthropic.messages.create({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 500,
+      temperature: 0.2,
+      messages: [
+        {
+          role: 'user',
+          content: `Summarize this AI-focused YouTube video transcript as strict JSON.\n\nReturn exactly this shape:\n{\"summary\":\"2-3 sentences\",\"keyPoints\":[\"point 1\",\"point 2\"]}\n\nRules:\n- summary must be 2-3 concise sentences\n- keyPoints must contain 3-5 items\n- each key point must be a short sentence fragment\n- no markdown fences\n- no extra keys\n\nTitle: ${video.title}\nChannel: ${video.channelName}\nTranscript:\n${transcriptText}`,
+        },
+      ],
+    });
+
+    const text = response.content
+      .filter((block) => block.type === 'text')
+      .map((block) => block.text)
+      .join('\n')
+      .trim()
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/\s*```$/, '');
+
+    const parsed = JSON.parse(text);
+    const summary = typeof parsed.summary === 'string' ? normalizeCopy(parsed.summary) : fallbackSummary;
+    const keyPoints = Array.isArray(parsed.keyPoints)
+      ? parsed.keyPoints
+          .filter((point) => typeof point === 'string')
+          .map((point) => normalizeCopy(point))
+          .filter(Boolean)
+          .slice(0, MAX_KEY_POINTS)
+      : [];
+
+    return {
+      summary: summary || fallbackSummary,
+      keyPoints,
+    };
+  } catch (error) {
+    console.warn(`  summary ${video.videoId}: ${error.message}`);
+    return {
+      summary: fallbackSummary,
+      keyPoints: [],
+    };
+  }
+}
+
+async function enrichVideo(video) {
+  const transcriptText = await fetchTranscriptText(video.videoId);
+  const { summary, keyPoints } = await generateSummaryFromTranscript(video, transcriptText);
+
+  return {
+    ...video,
+    summary,
+    keyPoints,
+  };
+}
+
 async function main() {
   console.log('Fetching YouTube videos...');
   const results = await Promise.all(YOUTUBE_CHANNELS.map(fetchChannelVideos));
@@ -128,6 +222,10 @@ async function main() {
   console.log(`After deduplication: ${videos.length}`);
 
   videos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+  videos = videos.slice(0, MAX_VIDEOS_PER_FETCH);
+
+  console.log(`Generating summaries for ${videos.length} videos...`);
+  videos = await Promise.all(videos.map(enrichVideo));
 
   const outDir = join(__dirname, '../src/data');
   mkdirSync(outDir, { recursive: true });

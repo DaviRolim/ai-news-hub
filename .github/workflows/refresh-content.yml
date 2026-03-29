@@ -28,6 +28,8 @@ jobs:
         run: npm run fetch-news
 
       - name: Fetch latest YouTube videos
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: npm run fetch-youtube
 
       - name: Commit and push if changed

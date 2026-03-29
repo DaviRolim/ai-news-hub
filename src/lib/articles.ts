@@ -3,12 +3,15 @@ export interface ArticleRecord {
   source: string;
   summary: string;
   content?: string;
+  description?: string;
   url: string;
   publishedAt: string;
   category?: string;
   videoId?: string;
   thumbnailUrl?: string;
   channelName?: string;
+  channelUrl?: string;
+  keyPoints?: string[];
   type?: 'article' | 'video';
 }
 
